@@ -1,0 +1,14 @@
+{"tier": "cheap", "q": "Classify this support ticket as billing, technical, or account: 'I was charged twice for my March invoice.'", "slo": "batch", "policy": "economy"}
+{"tier": "cheap", "q": "Classify the sentiment of this review as positive, negative, or neutral: 'Setup took ten minutes and it just worked.'", "slo": "batch", "policy": "economy"}
+{"tier": "cheap", "q": "Hi, thanks for the help earlier!", "slo": "realtime", "policy": "economy"}
+{"tier": "cheap", "q": "What is the difference between a rolling deployment and a blue-green deployment?", "slo": "interactive", "policy": null}
+{"tier": "cheap", "q": "What is a dead letter queue and when should I use one?", "slo": "realtime", "policy": null}
+{"tier": "cheap", "q": "Write three subject line variants for the renewal reminder campaign.", "slo": "batch", "policy": "economy"}
+{"tier": "cheap", "q": "Tag this product description with the right taxonomy category: 'stainless steel insulated water bottle, 750ml'.", "slo": "batch", "policy": "economy"}
+{"tier": "mid", "q": "Write a Python function that validates an IBAN and returns the country code.", "slo": "interactive", "policy": null}
+{"tier": "mid", "q": "Write a SQL query that returns monthly active users by plan tier for the last 12 months.", "slo": "interactive", "policy": null}
+{"tier": "mid", "q": "Draft a product launch announcement email for our new analytics dashboard, in our usual brand voice.", "slo": "interactive", "policy": null}
+{"tier": "heavy", "q": "Should we use event sourcing or a plain audit table for our compliance log? Consider the tradeoffs.", "slo": "interactive", "policy": null}
+{"tier": "heavy", "q": "Design the architecture for a multi-region write path with under 100ms p99 and no data loss on region failure. Walk through the tradeoffs.", "slo": "background", "policy": "quality"}
+{"tier": "heavy", "q": "Build an end-to-end pipeline that pulls tickets from Zendesk, classifies them, and files a Jira issue for each P1. Then set up the nightly run.", "slo": "background", "policy": null}
+{"tier": "heavy", "q": "Prove that the proposed rebalancing algorithm terminates and derive its worst-case complexity.", "slo": "background", "policy": "critical"}

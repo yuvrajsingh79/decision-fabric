@@ -1,0 +1,183 @@
+# The ontology seed: everything except models (see models.yaml).
+# Loaded into a directed multigraph by seed.py.
+
+capabilities:
+  instruction_following: {desc: "Follows format/constraints without drift"}
+  structured_extraction: {desc: "Pulls typed fields out of unstructured text"}
+  summarization:         {desc: "Compresses without losing load-bearing detail"}
+  long_context:          {desc: "Retrieval accuracy deep into a large context"}
+  deep_reasoning:        {desc: "Multi-hop inference, planning, self-correction"}
+  math_symbolic:         {desc: "Formal/quantitative derivation"}
+  code_synthesis:        {desc: "Writes correct, runnable code"}
+  code_review:           {desc: "Finds real defects in existing code"}
+  agentic_tool_use:      {desc: "Multi-step tool orchestration without losing the plot"}
+  domain_precision:      {desc: "Low tolerance for confident-but-wrong in regulated domains"}
+  creative_writing:      {desc: "Voice, structure, originality"}
+  multilingual:          {desc: "Non-English fidelity"}
+
+# TaskType -[REQUIRES {min_level}]-> Capability
+# min_level is the bar a model must clear on that capability to be a candidate.
+task_types:
+
+  chitchat:
+    desc: "Greetings, small talk, trivial acknowledgements"
+    requires: {instruction_following: 0.40}
+    output_class: short
+
+  classification:
+    desc: "Assign a label from a known set"
+    requires: {instruction_following: 0.60, structured_extraction: 0.62}
+    output_class: tiny
+
+  extraction:
+    desc: "Pull structured fields from documents"
+    requires: {structured_extraction: 0.74, instruction_following: 0.62}
+    output_class: short
+
+  summarization_short:
+    desc: "Summarize a small document or thread"
+    requires: {summarization: 0.62, instruction_following: 0.55}
+    output_class: short
+
+  summarization_long:
+    desc: "Summarize a large corpus or long document"
+    requires: {summarization: 0.75, long_context: 0.78}
+    output_class: medium
+
+  rag_qa:
+    desc: "Answer from supplied retrieved context"
+    requires: {instruction_following: 0.68, long_context: 0.62, domain_precision: 0.62}
+    output_class: short
+
+  factual_qa:
+    desc: "Short answer from model knowledge"
+    requires: {instruction_following: 0.55, domain_precision: 0.55}
+    output_class: short
+
+  code_gen:
+    desc: "Write new code to a spec"
+    requires: {code_synthesis: 0.80, deep_reasoning: 0.65, instruction_following: 0.70}
+    output_class: medium
+
+  code_review:
+    desc: "Review a diff or file for defects"
+    requires: {code_review: 0.82, deep_reasoning: 0.75}
+    output_class: medium
+
+  debugging:
+    desc: "Diagnose a failure from logs/stack traces/code"
+    requires: {deep_reasoning: 0.84, code_synthesis: 0.80, code_review: 0.78}
+    output_class: medium
+
+  data_analysis:
+    desc: "Interpret tabular/quantitative data, draw conclusions"
+    requires: {deep_reasoning: 0.75, structured_extraction: 0.72, math_symbolic: 0.70}
+    output_class: medium
+
+  math_proof:
+    desc: "Formal derivation, proof, or quantitative modelling"
+    requires: {math_symbolic: 0.90, deep_reasoning: 0.90}
+    output_class: medium
+
+  agentic_multistep:
+    desc: "Long-horizon plan-and-execute with tools"
+    requires: {agentic_tool_use: 0.90, deep_reasoning: 0.88, instruction_following: 0.85}
+    output_class: long
+
+  architecture_design:
+    desc: "System design with tradeoff analysis"
+    requires: {deep_reasoning: 0.88, code_synthesis: 0.80, instruction_following: 0.78}
+    output_class: long
+
+  creative_writing:
+    desc: "Marketing copy, narrative, brand voice"
+    requires: {creative_writing: 0.75, instruction_following: 0.60}
+    output_class: medium
+
+  translation:
+    desc: "Translate between languages"
+    requires: {multilingual: 0.72, instruction_following: 0.60}
+    output_class: medium
+
+# Domain -[ELEVATES {capability: delta}]-> Capability
+# Regulated/high-blast-radius domains raise the bar on the same task type.
+domains:
+  general:    {elevates: {}}
+  support:    {elevates: {instruction_following: 0.03}}
+  engineering: {elevates: {code_synthesis: 0.03, deep_reasoning: 0.03}}
+  finance:    {elevates: {domain_precision: 0.14, math_symbolic: 0.08, deep_reasoning: 0.05}}
+  legal:      {elevates: {domain_precision: 0.16, long_context: 0.06, instruction_following: 0.05}}
+  healthcare: {elevates: {domain_precision: 0.18, deep_reasoning: 0.06}}
+  security:   {elevates: {domain_precision: 0.12, deep_reasoning: 0.08, code_review: 0.06}}
+
+# Signal -[ELEVATES]-> Capability
+# Detected in the query text; each hit raises required levels. This is how a
+# "simple" task type escalates when the specific instance is hard.
+complexity_signals:
+  multi_step:
+    patterns: ["step by step", "first.*then", "and then", "plan and", "walk me through", "end to end", "pipeline"]
+    elevates: {deep_reasoning: 0.10}
+  ambiguity:
+    patterns: ["not sure", "somehow", "figure out", "what should we", "which approach", "tradeoff", "trade-off"]
+    elevates: {deep_reasoning: 0.08, instruction_following: 0.04}
+  quantitative:
+    patterns: ["calculate", "compute", "forecast", "npv", "irr", "variance", "regression", "p-value", "%", "roi"]
+    elevates: {math_symbolic: 0.10, deep_reasoning: 0.05}
+  correctness_critical:
+    patterns: ["production", "customer-facing", "must not", "compliance", "audit", "regulatory", "sox", "hipaa", "gdpr", "contract"]
+    elevates: {domain_precision: 0.12, deep_reasoning: 0.05}
+  novelty:
+    patterns: ["design", "architect", "from scratch", "greenfield", "invent", "novel"]
+    elevates: {deep_reasoning: 0.08, code_synthesis: 0.04}
+  adversarial:
+    patterns: ["edge case", "race condition", "why does.*fail", "intermittent", "flaky", "heisenbug", "deadlock"]
+    elevates: {deep_reasoning: 0.12, code_review: 0.08}
+  long_input:
+    patterns: []            # set programmatically from token count
+    elevates: {long_context: 0.12}
+  citations_required:
+    patterns: ["cite", "source", "reference", "according to the attached", "per the document"]
+    elevates: {domain_precision: 0.08, long_context: 0.05}
+
+# Non-functional constraints that filter or reshape the config, not the model set.
+latency_slos:
+  realtime:    {desc: "User is watching a cursor blink", max_relative_latency: 0.25, allow_batch: false, allow_fast_mode: true}
+  interactive: {desc: "Chat UI, a few seconds is fine",  max_relative_latency: 0.80, allow_batch: false, allow_fast_mode: true}
+  background:  {desc: "Job queue, minutes are fine",     max_relative_latency: 1.00, allow_batch: false, allow_fast_mode: false}
+  batch:       {desc: "Nightly / bulk, hours are fine",  max_relative_latency: 1.00, allow_batch: true,  allow_fast_mode: false}
+
+# Scope signals shift the expected output SIZE without changing the task type.
+# "write a function" and "write a whole project" are the same task at different
+# scales; treating them identically either truncates the project or buys a
+# 32K ceiling for a one-liner. The shift moves along output_class_ladder.
+output_class_ladder: [tiny, short, medium, long, xlong]
+
+output_scope_signals:
+  multi_artifact:
+    desc: "A deliverable made of several files/modules, not one snippet"
+    patterns:
+      - "\\b(project|application|app|package|library|framework|service|system|game|bot)\\b"
+      - "\\b(multi[- ]?file|several files|whole (repo|codebase)|end.?to.?end)\\b"
+      - "\\b(with tests|including tests|plus tests|and a readme|project structure|scaffold)\\b"
+      - "\\b(full|complete|entire) (implementation|solution|example)\\b"
+    output_class_shift: 1
+  exhaustive:
+    desc: "Explicitly asks for breadth — every item, all cases"
+    patterns:
+      - "\\b(every|all of the|exhaustive|comprehensive|each of the)\\b"
+      - "\\b(list all|enumerate)\\b"
+    output_class_shift: 1
+  terse:
+    desc: "Explicitly asks for a small answer"
+    patterns:
+      - "\\b(one[- ]?liner|snippet|just the (function|code|answer)|in one sentence)\\b"
+      - "\\b(briefly|short answer|tl;?dr|concise)\\b"
+    output_class_shift: -1
+
+# Rough token counts per output class, used for cost projection.
+output_classes:
+  tiny:   {expected_output_tokens: 60,    max_tokens: 512}
+  short:  {expected_output_tokens: 400,   max_tokens: 2048}
+  medium: {expected_output_tokens: 1800,  max_tokens: 8192}
+  long:   {expected_output_tokens: 7000,  max_tokens: 32000}
+  xlong:  {expected_output_tokens: 24000, max_tokens: 96000}

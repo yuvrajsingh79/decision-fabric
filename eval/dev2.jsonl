@@ -1,0 +1,91 @@
+{"q": "orders api started returning empty arrays for some tenants overnight, nothing changed on our end that i know of", "label": "debugging"}
+{"q": "memory climbs steadily until the pod gets OOMKilled around hour six", "label": "debugging"}
+{"q": "two of our workers are processing the same message. queue is supposed to be exactly-once", "label": "debugging"}
+{"q": "login works on staging but not prod, same build", "label": "debugging"}
+{"q": "getting a 403 from S3 only for files uploaded before March", "label": "debugging"}
+{"q": "the report totals are off by a few cents and finance noticed", "label": "debugging"}
+{"q": "before I merge this, mind checking the error handling in the retry loop?", "label": "code_review"}
+{"q": "here's my PR for the rate limiter, anything I'm missing?", "label": "code_review"}
+{"q": "is the locking in this class actually safe or am I fooling myself", "label": "code_review"}
+{"q": "go over the changes in this patch and tell me what could break", "label": "code_review"}
+{"q": "I refactored the parser, does it still handle the edge cases the old one did?", "label": "code_review"}
+{"q": "check my terraform for anything that would take down prod", "label": "code_review"}
+{"q": "I need a script that watches a directory and uploads anything new to blob storage", "label": "code_gen"}
+{"q": "can you knock together a webhook receiver that verifies the signature", "label": "code_gen"}
+{"q": "something to convert our old config format to the new yaml schema", "label": "code_gen"}
+{"q": "set me up a small flask service with health and metrics endpoints", "label": "code_gen"}
+{"q": "need a helper that retries with exponential backoff and jitter", "label": "code_gen"}
+{"q": "make a command line tool for bulk-renaming photos by exif date", "label": "code_gen"}
+{"q": "we're at the point where one database isn't cutting it. what are our options", "label": "architecture_design"}
+{"q": "thinking about moving to event-driven, talk me through whether that's sensible for us", "label": "architecture_design"}
+{"q": "how should we lay this out so a single region going down doesn't take us with it", "label": "architecture_design"}
+{"q": "queue vs stream for this workload, which way would you lean and why", "label": "architecture_design"}
+{"q": "we need to support 50x the traffic by Q3, what has to change", "label": "architecture_design"}
+{"q": "is a service mesh worth the operational cost at our size", "label": "architecture_design"}
+{"q": "get me the effective dates and renewal terms out of these forty contracts", "label": "extraction"}
+{"q": "I need name, email and company for each person mentioned in these emails", "label": "extraction"}
+{"q": "from the lab report, what values are outside the reference range? just the numbers", "label": "extraction"}
+{"q": "structure these job postings into title, seniority, location, salary band", "label": "extraction"}
+{"q": "pull every SKU and quantity off this purchase order", "label": "extraction"}
+{"q": "what dependencies are declared in these manifests, as a table", "label": "extraction"}
+{"q": "is this transaction fraudulent or legitimate", "label": "classification"}
+{"q": "route this to the right team: infra, product, or security", "label": "classification"}
+{"q": "urgent or can it wait?", "label": "classification"}
+{"q": "does this message violate our community guidelines", "label": "classification"}
+{"q": "put each of these support emails into one of our five intent buckets", "label": "classification"}
+{"q": "which tier does this customer fall into based on the description", "label": "classification"}
+{"q": "quick rundown of what happened in this incident channel", "label": "summarization_short"}
+{"q": "tl;dr this design doc for me", "label": "summarization_short"}
+{"q": "what were the decisions from this meeting transcript", "label": "summarization_short"}
+{"q": "shorten this update so it fits in a slack message", "label": "summarization_short"}
+{"q": "give me the highlights of this earnings call", "label": "summarization_short"}
+{"q": "recap this email chain, I only need the outcome", "label": "summarization_short"}
+{"q": "read through the whole quarter of NPS verbatims and tell me what's driving detractors", "label": "summarization_long"}
+{"q": "synthesize the findings across all thirty user interviews", "label": "summarization_long"}
+{"q": "we have two years of postmortems, what patterns show up repeatedly", "label": "summarization_long"}
+{"q": "go through every changelog since v2 and give me a migration overview", "label": "summarization_long"}
+{"q": "summarize this entire codebase's architecture from the files I attached", "label": "summarization_long"}
+{"q": "what notice period does the attached lease require", "label": "rag_qa"}
+{"q": "in the spec I shared, how is the retry budget defined", "label": "rag_qa"}
+{"q": "does our security policy allow personal devices? quote the relevant part", "label": "rag_qa"}
+{"q": "from the handbook, how much parental leave do we offer", "label": "rag_qa"}
+{"q": "the RFP asks about SOC2 — what did we say in the attached questionnaire", "label": "rag_qa"}
+{"q": "according to the uploaded report, what was Q3 churn", "label": "rag_qa"}
+{"q": "what's the difference between a mutex and a semaphore", "label": "factual_qa"}
+{"q": "how long do http cookies last by default", "label": "factual_qa"}
+{"q": "why do we use base64 for binary data in json", "label": "factual_qa"}
+{"q": "what year did kubernetes 1.0 ship", "label": "factual_qa"}
+{"q": "explain what a bloom filter is good for", "label": "factual_qa"}
+{"q": "is postgres ACID compliant", "label": "factual_qa"}
+{"q": "hey there", "label": "chitchat"}
+{"q": "appreciate it, have a good one", "label": "chitchat"}
+{"q": "good morning, ready when you are", "label": "chitchat"}
+{"q": "no worries, take your time", "label": "chitchat"}
+{"q": "sorry, ignore that last message", "label": "chitchat"}
+{"q": "did the new onboarding flow actually reduce drop-off or is that wishful thinking", "label": "data_analysis"}
+{"q": "here are the weekly signups for two years, anything unusual in there", "label": "data_analysis"}
+{"q": "work out which channel gives us the best return on spend", "label": "data_analysis"}
+{"q": "our support volume jumped 30% last month, dig into why from this data", "label": "data_analysis"}
+{"q": "model out what happens to margin if we raise prices 8 percent", "label": "data_analysis"}
+{"q": "compare these two cohorts and tell me if the difference is meaningful", "label": "data_analysis"}
+{"q": "show that no two processes can enter the critical section at once here", "label": "math_proof"}
+{"q": "what's the worst case running time of this and can you justify it formally", "label": "math_proof"}
+{"q": "convince me this consensus protocol is safe under network partition", "label": "math_proof"}
+{"q": "derive the expected queue length for this arrival rate", "label": "math_proof"}
+{"q": "is this loop guaranteed to terminate for all inputs? show your working", "label": "math_proof"}
+{"q": "need words for the careers page that don't sound like corporate filler", "label": "creative_writing"}
+{"q": "help me phrase this layoff email so it's honest and not cold", "label": "creative_writing"}
+{"q": "come up with taglines for the new mobile app", "label": "creative_writing"}
+{"q": "turn these release notes into something a customer would actually read", "label": "creative_writing"}
+{"q": "I need a short bio for the conference program, third person", "label": "creative_writing"}
+{"q": "punch up this intro paragraph, it's flat", "label": "creative_writing"}
+{"q": "put the support macros into Japanese", "label": "translation"}
+{"q": "what does this Italian invoice say", "label": "translation"}
+{"q": "localize the checkout copy for the Brazilian market", "label": "translation"}
+{"q": "convert this documentation to simplified Chinese", "label": "translation"}
+{"q": "our Korean users sent this feedback, what are they telling us", "label": "translation"}
+{"q": "every night, check for failed payments, retry them, and email me what's still broken", "label": "agentic_multistep"}
+{"q": "look up each domain in this list, find who owns it, and put it in a sheet", "label": "agentic_multistep"}
+{"q": "when a ticket comes in, triage it, draft a reply, and assign it to someone", "label": "agentic_multistep"}
+{"q": "scrape the competitor pricing pages weekly and alert me on changes", "label": "agentic_multistep"}
+{"q": "take the meeting recording, transcribe it, extract action items, then create the tasks", "label": "agentic_multistep"}

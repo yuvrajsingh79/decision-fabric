@@ -1,0 +1,107 @@
+# Budget policies -> Policy nodes. A tenant/workload picks one.
+#
+# Two different bars, deliberately separate:
+#   quality_floor    - model SELECTION. How much capability headroom must a
+#                      model have before this policy will route to it at all.
+#   accept_threshold - answer ACCEPTANCE. Is the response that came back good
+#                      enough to return to the user.
+# Setting them equal makes any model sitting near the floor a coin flip, and
+# the learning loop then drives it out of the candidate pool for good --
+# measured as a cost regression from +28% to -26% over five rounds. The
+# acceptance bar is an absolute shippability test and sits below the floor.
+
+policies:
+
+  economy:
+    desc: "Bulk internal workloads. Cheapest model that clears a modest bar."
+    quality_floor: 0.60          # min expected_quality to route here at all
+    accept_threshold: 0.45       # min realised quality to ship the answer
+    cascade: true                # try cheap, verify, escalate on failure
+    max_escalations: 2
+    allow_batch: true
+    allow_fast_mode: false
+    effort_bias: -1              # shift effort one notch down
+    verifier: heuristic
+
+  balanced:
+    desc: "Default for internal knowledge work."
+    quality_floor: 0.72
+    accept_threshold: 0.55
+    cascade: true
+    max_escalations: 1
+    allow_batch: true
+    allow_fast_mode: false
+    effort_bias: 0
+    verifier: heuristic
+
+  quality:
+    desc: "Customer-facing output. Cascade only from one rung down."
+    quality_floor: 0.85
+    accept_threshold: 0.68
+    cascade: true
+    max_escalations: 1
+    allow_batch: false
+    allow_fast_mode: true
+    effort_bias: 0
+    verifier: llm                # cheap Haiku judge before accepting
+
+  critical:
+    desc: "Regulated / irreversible. No cascade, no batch, top of the ladder."
+    quality_floor: 0.93
+    accept_threshold: 0.80
+    cascade: false
+    max_escalations: 0
+    allow_batch: false
+    allow_fast_mode: true
+    effort_bias: +1
+    verifier: llm
+
+default_policy: balanced
+
+# Domains that force a minimum policy regardless of what the caller asked for.
+policy_floors_by_domain:
+  healthcare: quality
+  legal: quality
+  finance: quality
+
+# The learning loop.
+learning:
+  # Beta prior strength: how many observations before evidence outweighs the
+  # hand-authored seed prior. Lower = adapts faster, noisier.
+  prior_strength: 8
+  # Cap how far evidence may move a capability level away from its seed.
+  max_level_drift: 0.10
+  # An escalation is recorded as a failure for the model that was escalated from.
+  escalation_counts_as_failure: true
+  # Std-dev of realised answer quality around a model's expected quality. Used
+  # to turn "expected quality vs acceptance bar" into a probability of failure
+  # for the cascade EV gate. In production, estimate this from your own
+  # verifier scores rather than trusting this default.
+  quality_sigma: 0.10
+
+# Cheap models used by the fabric itself. These are infrastructure calls, not
+# routed user work — keep them at the bottom of the ladder or the router costs
+# more than it saves.
+meta_models:
+  classifier: claude-haiku-4-5
+  verifier: claude-haiku-4-5
+
+# ---------------------------------------------------------------- classification
+#
+# Measured on held-out data, the free regex layer classifies natural enterprise
+# phrasing at ~14% accuracy: 11 of 16 task types score zero recall. It is not a
+# classifier and must not be used as one. It is a PRECISION fast-path -- it may
+# skip the paid LLM call only where it has demonstrated it is reliable.
+#
+# So the gate is no longer a hand-picked confidence number. The heuristic may
+# commit only if its confidence band has MEASURED precision >= min_commit_precision
+# on the development set. Bands with no measurement, or insufficient support,
+# always escalate. Regenerate with:  python eval/calibrate.py
+#
+# This costs more LLM calls and is worth it: at $0.00072 a call, classification
+# overhead is ~1.6% of the average per-query routing saving. Misrouting is the
+# expensive failure, not classifying.
+classification:
+  min_commit_precision: 0.90   # required measured precision to skip the LLM
+  min_band_support: 5          # min observations before a band may be trusted
+  calibration_file: calibration.yaml

@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+.env
+*.dot
+*.svg
+
+.pytest_cache/

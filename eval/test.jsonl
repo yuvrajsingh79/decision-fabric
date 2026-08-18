@@ -1,0 +1,75 @@
+{"q": "cron job fired twice last night and double-charged forty customers", "label": "debugging"}
+{"q": "search results are stale for about ten minutes after an update, cache invalidation isn't firing", "label": "debugging"}
+{"q": "app crashes on android 13 only, works everywhere else", "label": "debugging"}
+{"q": "connection pool exhausts under moderate load and never recovers", "label": "debugging"}
+{"q": "timestamps are shifting by an hour for european users", "label": "debugging"}
+{"q": "give my websocket handler a once-over before it ships", "label": "code_review"}
+{"q": "anything sketchy in how I'm doing input sanitization here", "label": "code_review"}
+{"q": "walk through my caching layer and point out problems", "label": "code_review"}
+{"q": "does this migration have a rollback path? tell me what you see", "label": "code_review"}
+{"q": "second opinion on this concurrency code please", "label": "code_review"}
+{"q": "I want a thing that turns markdown into styled pdf", "label": "code_gen"}
+{"q": "throw together a rate limiter using redis", "label": "code_gen"}
+{"q": "need a parser for these weird fixed-width bank files", "label": "code_gen"}
+{"q": "whip up an endpoint that streams server-sent events", "label": "code_gen"}
+{"q": "put together a tool that diffs two database schemas", "label": "code_gen"}
+{"q": "our search is slow at scale, how would you redesign it", "label": "architecture_design"}
+{"q": "monorepo or separate repos for six teams? make the case either way", "label": "architecture_design"}
+{"q": "we want zero-downtime deploys, what does that require of us", "label": "architecture_design"}
+{"q": "help me think through the data model for multi-tenancy", "label": "architecture_design"}
+{"q": "sync or async between these two services, what would you pick", "label": "architecture_design"}
+{"q": "get me issuer, policy number and coverage limits off these certificates", "label": "extraction"}
+{"q": "which clauses in these NDAs mention arbitration? give me the text", "label": "extraction"}
+{"q": "turn these unstructured addresses into street, city, postcode fields", "label": "extraction"}
+{"q": "identify all the API keys and endpoints referenced in this config dump", "label": "extraction"}
+{"q": "for each resume, I want years of experience and primary language", "label": "extraction"}
+{"q": "flag this as approved, rejected, or needs review", "label": "classification"}
+{"q": "which of our four personas does this account look like", "label": "classification"}
+{"q": "is the tone of this reply professional or too casual", "label": "classification"}
+{"q": "bucket these expenses into travel, software, or other", "label": "classification"}
+{"q": "decide whether this bug report is a duplicate", "label": "classification"}
+{"q": "what's the short version of this thread", "label": "summarization_short"}
+{"q": "condense today's alerts into something I can read on my phone", "label": "summarization_short"}
+{"q": "boil this RFC down to the three main points", "label": "summarization_short"}
+{"q": "brief me on what this customer call covered", "label": "summarization_short"}
+{"q": "one paragraph on what changed in this diff", "label": "summarization_short"}
+{"q": "across all our churned accounts this year, what reasons keep coming up", "label": "summarization_long"}
+{"q": "digest the entire policy library and tell me where they contradict each other", "label": "summarization_long"}
+{"q": "review every sprint retro from the last year and find the recurring blockers", "label": "summarization_long"}
+{"q": "consolidate the findings from all these penetration test reports", "label": "summarization_long"}
+{"q": "in the contract I uploaded, what happens if we miss an SLA", "label": "rag_qa"}
+{"q": "the attached policy — are we allowed to store data outside the EU", "label": "rag_qa"}
+{"q": "per the onboarding guide, who approves production access", "label": "rag_qa"}
+{"q": "from the annual report, what was operating margin last year", "label": "rag_qa"}
+{"q": "the spec I gave you: what's the default timeout", "label": "rag_qa"}
+{"q": "what does eventual consistency actually mean in practice", "label": "factual_qa"}
+{"q": "how big can a UDP packet be", "label": "factual_qa"}
+{"q": "difference between authentication and authorization", "label": "factual_qa"}
+{"q": "when was TLS 1.3 finalized", "label": "factual_qa"}
+{"q": "what is a write-ahead log for", "label": "factual_qa"}
+{"q": "hi, quick one for you", "label": "chitchat"}
+{"q": "thanks so much, that helps a lot", "label": "chitchat"}
+{"q": "afternoon", "label": "chitchat"}
+{"q": "never mind, figured it out", "label": "chitchat"}
+{"q": "did the referral program move the needle or not", "label": "data_analysis"}
+{"q": "here's a year of latency percentiles, tell me if we're degrading", "label": "data_analysis"}
+{"q": "figure out which features correlate with retention in this export", "label": "data_analysis"}
+{"q": "what would happen to headcount cost if we shifted the hiring plan a quarter", "label": "data_analysis"}
+{"q": "is the difference between these two variants statistically real", "label": "data_analysis"}
+{"q": "establish that this algorithm never revisits a node", "label": "math_proof"}
+{"q": "give me a rigorous bound on the memory this uses", "label": "math_proof"}
+{"q": "demonstrate that the invariant survives concurrent writes", "label": "math_proof"}
+{"q": "what's the asymptotic complexity here, and justify it properly", "label": "math_proof"}
+{"q": "words for the homepage hero, confident but not arrogant", "label": "creative_writing"}
+{"q": "help me write a thank-you note to the beta users", "label": "creative_writing"}
+{"q": "need a name and one-liner for this internal tool", "label": "creative_writing"}
+{"q": "make this security advisory readable by non-engineers", "label": "creative_writing"}
+{"q": "rewrite our 404 page copy so it's actually charming", "label": "creative_writing"}
+{"q": "render the mobile app strings in Dutch", "label": "translation"}
+{"q": "what is this Polish customer complaint about", "label": "translation"}
+{"q": "adapt the marketing site for the Japanese market", "label": "translation"}
+{"q": "put our terms of service into Spanish", "label": "translation"}
+{"q": "each morning pull the error budget, compare to target, and post if we're burning too fast", "label": "agentic_multistep"}
+{"q": "for every customer in this list, look up their plan, check usage, and flag overages", "label": "agentic_multistep"}
+{"q": "watch the deploy channel, and if something fails, gather the logs and open an incident", "label": "agentic_multistep"}
+{"q": "read the invoices from the shared drive, validate them, then push to the ledger", "label": "agentic_multistep"}

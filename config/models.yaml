@@ -1,0 +1,171 @@
+# Model catalog -> Model nodes in the knowledge graph.
+#
+# `provides` levels are SEED PRIORS on a 0..1 scale, hand-authored for this PoC.
+# They are NOT benchmark-derived. The learning loop (learning.py) updates the
+# effective level per (model, task_type) from observed outcomes, so the graph
+# converges on your workload rather than on these guesses.
+provenance: seed-prior/hand-authored/2026-08
+
+# Pricing is USD per 1M tokens, Anthropic first-party API rates.
+# `intro_*` prices apply until `intro_until` (inclusive), then list price applies.
+models:
+
+  - id: claude-haiku-4-5
+    display_name: Claude Haiku 4.5
+    rung: 0                      # position on the escalation ladder
+    context_window: 200000
+    max_output_tokens: 64000
+    pricing: {input_per_mtok: 1.00, output_per_mtok: 5.00}
+    nfr: {relative_latency: 0.15, throughput_class: high}
+    config_surface:
+      thinking_style: budget_tokens   # legacy: {"type":"enabled","budget_tokens":N}
+      thinking_min_budget: 1024
+      supports_effort: false          # `output_config.effort` errors on this model
+      supports_temperature: true
+      supports_fast_mode: false
+      supports_batch: true
+      supports_caching: true
+      supports_1h_cache: true
+    provides:
+      instruction_following: 0.74
+      structured_extraction: 0.80
+      summarization: 0.74
+      long_context: 0.55            # 200K ceiling, weakest recall at depth
+      deep_reasoning: 0.52
+      math_symbolic: 0.48
+      code_synthesis: 0.60
+      code_review: 0.55
+      agentic_tool_use: 0.62
+      domain_precision: 0.55
+      creative_writing: 0.58
+      multilingual: 0.66
+
+  - id: claude-sonnet-5
+    display_name: Claude Sonnet 5
+    rung: 1
+    context_window: 1000000
+    max_output_tokens: 128000
+    pricing:
+      input_per_mtok: 3.00
+      output_per_mtok: 15.00
+      intro_input_per_mtok: 2.00
+      intro_output_per_mtok: 10.00
+      intro_until: 2026-08-31
+    nfr: {relative_latency: 0.40, throughput_class: high}
+    config_surface:
+      thinking_style: adaptive        # {"type":"adaptive"} is the only on-mode
+      supports_thinking_disabled: true
+      supports_effort: true
+      effort_levels: [low, medium, high, xhigh, max]
+      supports_temperature: false     # removed on this model (400)
+      supports_fast_mode: false
+      supports_batch: true
+      supports_caching: true
+      supports_1h_cache: true
+      supports_mid_conversation_system: false
+    provides:
+      instruction_following: 0.88
+      structured_extraction: 0.89
+      summarization: 0.88
+      long_context: 0.85
+      deep_reasoning: 0.80
+      math_symbolic: 0.76
+      code_synthesis: 0.84
+      code_review: 0.80
+      agentic_tool_use: 0.83
+      domain_precision: 0.79
+      creative_writing: 0.80
+      multilingual: 0.83
+
+  - id: claude-opus-5
+    display_name: Claude Opus 5
+    rung: 2
+    context_window: 1000000
+    max_output_tokens: 128000
+    pricing: {input_per_mtok: 5.00, output_per_mtok: 25.00}
+    nfr: {relative_latency: 0.70, throughput_class: medium}
+    config_surface:
+      thinking_style: adaptive        # on by default; omitting `thinking` runs adaptive
+      supports_thinking_disabled: true
+      thinking_disabled_max_effort: high   # disabled + xhigh/max -> 400
+      supports_effort: true
+      effort_levels: [low, medium, high, xhigh, max]
+      supports_temperature: false
+      supports_fast_mode: true        # beta fast-mode-2026-02-01, priced $10/$50
+      fast_mode_pricing: {input_per_mtok: 10.00, output_per_mtok: 50.00}
+      supports_batch: true            # but NOT together with fast mode
+      supports_caching: true
+      supports_1h_cache: true
+      supports_mid_conversation_system: true
+    provides:
+      instruction_following: 0.94
+      structured_extraction: 0.93
+      summarization: 0.92
+      long_context: 0.93
+      deep_reasoning: 0.93
+      math_symbolic: 0.91
+      code_synthesis: 0.94
+      code_review: 0.93
+      agentic_tool_use: 0.94
+      domain_precision: 0.91
+      creative_writing: 0.89
+      multilingual: 0.90
+
+  - id: claude-fable-5
+    display_name: Claude Fable 5
+    rung: 3
+    context_window: 1000000
+    max_output_tokens: 128000
+    pricing: {input_per_mtok: 10.00, output_per_mtok: 50.00}
+    nfr: {relative_latency: 1.00, throughput_class: low}
+    config_surface:
+      thinking_style: always_on       # omit `thinking`; explicit configs 400
+      supports_thinking_disabled: false
+      supports_effort: true
+      effort_levels: [low, medium, high, xhigh, max]
+      supports_temperature: false
+      supports_fast_mode: false
+      supports_batch: true
+      supports_caching: true
+      supports_1h_cache: true
+      supports_mid_conversation_system: true
+      requires_data_retention_30d: true
+      supports_refusal_fallbacks: true
+    provides:
+      instruction_following: 0.96
+      structured_extraction: 0.94
+      summarization: 0.93
+      long_context: 0.96
+      deep_reasoning: 0.98
+      math_symbolic: 0.97
+      code_synthesis: 0.97
+      code_review: 0.96
+      agentic_tool_use: 0.97
+      domain_precision: 0.95
+      creative_writing: 0.93
+      multilingual: 0.92
+
+# Cost multipliers that are properties of the *config*, not the model.
+modifiers:
+  cache_write_multiplier: 1.25    # on input tokens written to cache
+  cache_read_multiplier: 0.10     # on input tokens served from cache
+  batch_multiplier: 0.50          # all token usage, async (<=24h)
+  # Effort raises billed output tokens (thinking is billed as output).
+  effort_output_multiplier:
+    none: 1.00
+    low: 1.30
+    medium: 1.90
+    high: 3.00
+    xhigh: 4.50
+    max: 7.00
+
+# The escalation ladder: cheap-first cascade with verify-then-escalate.
+ladder: [claude-haiku-4-5, claude-sonnet-5, claude-opus-5, claude-fable-5]
+
+# What "not routing at all" costs — the baseline every saving is measured against.
+baseline:
+  model: claude-opus-5
+  effort: high
+  rationale: >
+    Enterprise default when there is no router: send everything to the flagship
+    at default effort. This is the spend the fabric is trying to cut.

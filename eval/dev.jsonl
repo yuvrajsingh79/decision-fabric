@@ -1,0 +1,60 @@
+{"q": "we keep getting duplicate rows after the nightly sync, any idea what's going on", "label": "debugging"}
+{"q": "Our p95 latency doubled after Tuesday's release and I can't see why", "label": "debugging"}
+{"q": "the job dies silently on large inputs, no logs, no exit code", "label": "debugging"}
+{"q": "Can you look over this migration script before I run it against prod?", "label": "code_review"}
+{"q": "I'd like a second pair of eyes on the auth middleware I just wrote", "label": "code_review"}
+{"q": "does this handler leak connections under load?", "label": "code_review"}
+{"q": "I need something that turns a folder of CSVs into one parquet file", "label": "code_gen"}
+{"q": "give me a small utility to diff two JSON documents", "label": "code_gen"}
+{"q": "spin up a REST endpoint that returns the current queue depth", "label": "code_gen"}
+{"q": "Put together a Slack bot that reminds people about standup", "label": "code_gen"}
+{"q": "How do I decide between Postgres and DynamoDB for a write-heavy workload?", "label": "architecture_design"}
+{"q": "We need a plan for splitting the monolith without a big-bang cutover", "label": "architecture_design"}
+{"q": "what's the right way to structure this so it survives a datacenter loss", "label": "architecture_design"}
+{"q": "Pull the contract dates and counterparty names out of these agreements", "label": "extraction"}
+{"q": "I need the line items and totals off these scanned receipts as JSON", "label": "extraction"}
+{"q": "From the intake notes, what medications is the patient on? Only what's written.", "label": "extraction"}
+{"q": "Which bucket does this ticket belong in: billing, bug, or feature request?", "label": "classification"}
+{"q": "Is this email spam or legitimate?", "label": "classification"}
+{"q": "Label each of these reviews as praise, complaint, or question", "label": "classification"}
+{"q": "Give me the gist of this thread, I've been out for a week", "label": "summarization_short"}
+{"q": "Condense the meeting notes into a few bullets", "label": "summarization_short"}
+{"q": "Boil down this incident report for the exec update", "label": "summarization_short"}
+{"q": "Go through all 400 exit interviews and tell me what the recurring themes are", "label": "summarization_long"}
+{"q": "Across every support transcript this year, what are customers complaining about most?", "label": "summarization_long"}
+{"q": "What does the attached SOW say about our payment terms? Quote the section.", "label": "rag_qa"}
+{"q": "Per the policy document, are contractors eligible for the wellness stipend?", "label": "rag_qa"}
+{"q": "Using the runbook I gave you, what's step 3 of the failover procedure?", "label": "rag_qa"}
+{"q": "What's the capital of Australia?", "label": "factual_qa"}
+{"q": "How does TCP slow start work?", "label": "factual_qa"}
+{"q": "what does idempotent mean in the context of APIs", "label": "factual_qa"}
+{"q": "morning! hope you had a good weekend", "label": "chitchat"}
+{"q": "thanks, that's exactly what I needed", "label": "chitchat"}
+{"q": "Show me whether the pricing change moved conversion, here's the funnel data", "label": "data_analysis"}
+{"q": "Is there a seasonal pattern in these support volumes?", "label": "data_analysis"}
+{"q": "Work out the payback period for each of these three vendor options", "label": "data_analysis"}
+{"q": "Show that this scheduling algorithm is optimal, or find a counterexample", "label": "math_proof"}
+{"q": "Derive the closed form for the expected number of retries under this backoff", "label": "math_proof"}
+{"q": "I need copy for the pricing page that doesn't sound like every other SaaS site", "label": "creative_writing"}
+{"q": "Put together an announcement for the Series B, warm but not cheesy", "label": "creative_writing"}
+{"q": "Rewrite this changelog entry so a non-engineer understands it", "label": "creative_writing"}
+{"q": "Render these help articles in Portuguese and German", "label": "translation"}
+{"q": "What's this German error message saying?", "label": "translation"}
+{"q": "Go through each open PR, summarize it, and post a digest to Slack every morning", "label": "agentic_multistep"}
+{"q": "Fetch yesterday's orders, reconcile them against Stripe, and flag mismatches", "label": "agentic_multistep"}
+{"q": "monitor the RSS feed, and when something matches our keywords, draft a response", "label": "agentic_multistep"}
+{"q": "Sort these inbound leads by industry", "label": "classification"}
+{"q": "Something's wrong with the checkout flow, customers are getting stuck at payment", "label": "debugging"}
+{"q": "Can you make me a dashboard app for tracking OKRs?", "label": "code_gen"}
+{"q": "Read through this vendor questionnaire and pull out every security commitment we made", "label": "extraction"}
+{"q": "Take a look at my SQL and tell me if the joins are right", "label": "code_review"}
+{"q": "Explain the tradeoff between consistency and availability here", "label": "architecture_design"}
+{"q": "Turn this legalese into plain English for the team", "label": "creative_writing"}
+{"q": "How many bytes is a UUID?", "label": "factual_qa"}
+{"q": "Summarize what changed in this release", "label": "summarization_short"}
+{"q": "Prove the invariant holds after every insertion", "label": "math_proof"}
+{"q": "Are these two customer records the same person? Yes or no.", "label": "classification"}
+{"q": "Build out a full test harness for the payments module, including fixtures", "label": "code_gen"}
+{"q": "Based on the deck, what growth rate did we commit to?", "label": "rag_qa"}
+{"q": "Look at these churn numbers and tell me if the trend is real or noise", "label": "data_analysis"}
+{"q": "Translate the onboarding emails into French", "label": "translation"}
