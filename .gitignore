@@ -8,3 +8,9 @@ venv/
 *.svg
 
 .pytest_cache/
+
+# unified spend ledger
+.decision_fabric_spend.db
+
+# build artifacts
+*.egg-info/

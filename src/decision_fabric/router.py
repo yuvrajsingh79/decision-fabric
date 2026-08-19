@@ -106,7 +106,10 @@ class Router:
         config_dir: Path | str | None = None,
         *,
         db_path: Path | str = "./decision_fabric.db",
-        dry_run: bool | None = None,
+        # Safe by default. This is a cost-control tool; it must not bill anyone
+        # for importing it. Pass dry_run=False to spend, or dry_run=None to
+        # auto-detect from available credentials.
+        dry_run: bool | None = True,
         use_llm_classifier: bool = True,
     ) -> None:
         self.fabric = Fabric(config_dir) if config_dir else Fabric()
@@ -168,6 +171,7 @@ class Router:
 
         depth_elevation = 0.0
         refine, gate_reason = classifier.should_refine(f, self.use_llm_classifier, self.fabric)
+        f.verified = not refine
         if refine:
             trace.append(
                 f"perceive: gate says escalate — {gate_reason}; paying for LLM classification"
@@ -180,6 +184,8 @@ class Router:
                 output_classes=sorted(self.fabric.output_classes),
             )
             overhead += ccost
+            if f.source == "llm":
+                f.verified = True
             for n in f.notes:
                 trace.append(f"perceive: {n}")
                 if n.startswith("depth_elevation="):
@@ -195,6 +201,21 @@ class Router:
             )
         else:
             trace.append(f"policy: {pol['name']} (quality floor {pol['quality_floor']:.2f})")
+
+        if not f.verified:
+            uv = self.fabric.classification_cfg.get("unverified_classification", {})
+            premium = float(uv.get("quality_floor_premium", 0.0))
+            pol = dict(pol)
+            if premium:
+                pol["quality_floor"] = round(min(0.99, pol["quality_floor"] + premium), 4)
+            if uv.get("disable_cascade"):
+                pol["cascade"] = False
+            pol["classification_unverified"] = True
+            trace.append(
+                f"policy: task type '{f.task_type}' is UNVERIFIED (gate wanted LLM "
+                f"classification, none happened) -> quality floor "
+                f"{pol['quality_floor']:.2f} (+{premium:.2f}), cascade disabled"
+            )
 
         slo = {"name": f.latency_slo, **self.fabric.latency_slos[f.latency_slo]}
         out_class = f.output_class or next(
@@ -337,8 +358,20 @@ class Router:
             )
             cost = actual_cost(
                 spec, self.fabric.modifiers, result.usage or {},
-                batch=plan.batch, fast_mode=plan.fast_mode,
+                # Bill what actually happened, not what was planned.
+                batch=result.billed_as_batch, fast_mode=plan.fast_mode,
             )
+            if not result.simulated and not result.error:
+                self.executor.record_spend(
+                    "routed_model", result.model_id, result.usage or {},
+                    cost.total_usd, f"{role}:{d.features.task_type}",
+                )
+            if plan.batch and not result.billed_as_batch:
+                d.trace.append(
+                    f"cost: plan marked {plan.model_id} batch-eligible but the live path "
+                    f"submits synchronously — no 50% discount applied "
+                    f"(Batch API not implemented)"
+                )
             v = verifier.verify(
                 result, mode=str(pol.get("verifier", "heuristic")), threshold=accept,
                 executor=self.executor, task_type=d.features.task_type, query=d.query,
@@ -374,16 +407,39 @@ class Router:
         """
         b = self.fabric.baseline()
         spec = self.kg.model(b["model"])
+        base_effort = b.get("effort", "high")
+        mults = self.fabric.modifiers["effort_output_multiplier"]
         in_tok = f.input_tokens
+        out_tok = int(oc_meta["expected_output_tokens"])
+
         if decision and decision.attempts:
-            u = decision.attempts[0].result.usage or {}
-            in_tok = max(in_tok, u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0))
+            # Compare like with like. Using the task's PROJECTED output length
+            # for the baseline while billing the router for its ACTUAL output
+            # inflates the saving whenever the projection runs long — on one
+            # live query that turned a genuine ~82% into a reported 97.5%.
+            # Use the observed answer length, scaled by the ratio of effort
+            # multipliers, since the flagship at higher effort emits more.
+            last = decision.attempts[-1]
+            u_ = last.result.usage or {}
+            in_tok = max(in_tok, u_.get("input_tokens", 0) + u_.get("cache_read_input_tokens", 0))
+            actual_out = int(u_.get("output_tokens", 0))
+            if actual_out > 0:
+                routed_mult = float(mults.get(last.plan.cost_effort_key(), 1.0))
+                base_mult = float(mults.get(base_effort, 1.0))
+                out_tok = max(1, int(actual_out * base_mult / max(routed_mult, 1e-9)))
+                # The multiplier is already folded in, so cost at effort "none".
+                return round(
+                    project_cost(
+                        spec, self.fabric.modifiers,
+                        fresh_input_tokens=in_tok, output_tokens=out_tok, effort="none",
+                    ).total_usd,
+                    8,
+                )
+
         return round(
             project_cost(
                 spec, self.fabric.modifiers,
-                fresh_input_tokens=in_tok,
-                output_tokens=int(oc_meta["expected_output_tokens"]),
-                effort=b.get("effort", "high"),
+                fresh_input_tokens=in_tok, output_tokens=out_tok, effort=base_effort,
             ).total_usd,
             8,
         )
