@@ -31,7 +31,9 @@ def get_router() -> Router:
     if _router is None:
         _router = Router(
             db_path=os.environ.get("DECISION_FABRIC_DB", "./decision_fabric.db"),
-            dry_run=None,  # live if credentials resolve, simulated otherwise
+            # Opt in explicitly: DECISION_FABRIC_LIVE=1. Defaults to simulation
+            # so deploying the service cannot start billing by surprise.
+            dry_run=os.environ.get("DECISION_FABRIC_LIVE", "").lower() not in ("1", "true", "yes"),
         )
     return _router
 

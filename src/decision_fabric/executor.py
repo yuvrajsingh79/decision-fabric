@@ -17,6 +17,7 @@ from typing import Any
 from .config_planner import RequestPlan
 from .features import estimate_tokens
 from .ontology import ModelSpec
+from .spend import SpendLedger
 
 # Spread of the simulated quality draw. Wide enough that a marginal model
 # fails sometimes, narrow enough that a strong one is not randomly punished.
@@ -36,6 +37,11 @@ class ExecutionResult:
     latency_s: float
     stop_reason: str | None
     simulated: bool
+    # Whether this call was ACTUALLY submitted through the Batch API. The
+    # planner may mark a request batch-eligible, but eligibility is not
+    # execution: billing the 50% discount for a synchronous call under-reports
+    # real spend by half, which is the opposite of what a cost tool must do.
+    billed_as_batch: bool = False
     sim_quality: float | None = None
     error: str | None = None
     request_id: str | None = None
@@ -46,8 +52,12 @@ class Executor:
     """Set `dry_run=False` and export ANTHROPIC_API_KEY (or `ant auth login`)
     to hit the real API. Nothing else changes — the plan is identical."""
 
-    def __init__(self, dry_run: bool | None = None) -> None:
+    def __init__(self, dry_run: bool | None = None, ledger: SpendLedger | None = None) -> None:
         self._client = None
+        # Opened lazily and only in live mode: dry-run must leave no trace and
+        # cost nothing, including no stray ledger file.
+        self._ledger = ledger
+        self._owns_ledger = False
         if dry_run is None:
             dry_run = not self._credentials_available()
         self.dry_run = dry_run
@@ -77,6 +87,22 @@ class Executor:
             f.endswith(".json") and os.path.getsize(os.path.join(creds, f)) > 2
             for f in os.listdir(creds)
         )
+
+    @property
+    def ledger(self) -> SpendLedger | None:
+        """The shared spend ledger. None in dry-run — nothing to record."""
+        if self.dry_run:
+            return None
+        if self._ledger is None:
+            self._ledger = SpendLedger()
+            self._owns_ledger = True
+        return self._ledger
+
+    def record_spend(self, component: str, model_id: str, usage, usd: float,
+                     note: str = "") -> None:
+        led = self.ledger
+        if led is not None and usd > 0:
+            led.record(component, model_id, usage, usd, note)
 
     @property
     def client(self):
@@ -145,6 +171,9 @@ class Executor:
             latency_s=round(latency, 3),
             stop_reason=getattr(msg, "stop_reason", None),
             simulated=False,
+            # The live path uses the synchronous Messages API. Batch submission
+            # is not implemented, so no batch discount may be claimed.
+            billed_as_batch=False,
             request_id=getattr(msg, "_request_id", None),
             notes=(["refused: " + str(getattr(msg.stop_details, "category", "?"))]
                    if getattr(msg, "stop_reason", None) == "refusal" else []),
@@ -219,5 +248,6 @@ class Executor:
             latency_s=latency,
             stop_reason="end_turn",
             simulated=True,
+            billed_as_batch=plan.batch,
             sim_quality=sim_quality,
         )

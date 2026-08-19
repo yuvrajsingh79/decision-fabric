@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "decision-fabric"
 version = "0.1.0"
 description = "A knowledge graph that decides which Claude model and config a query actually needs"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = ["networkx>=3.2", "pyyaml>=6.0", "anthropic>=0.40.0"]
 
 [project.optional-dependencies]

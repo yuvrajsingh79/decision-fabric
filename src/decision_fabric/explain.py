@@ -26,6 +26,12 @@ def render(d: RoutingDecision, *, show_trace: bool = True, show_answer: bool = F
     )
     if d.features.signals:
         L.append(f"SIGNALS {', '.join(d.features.signals)}")
+    if not d.features.verified:
+        L.append(
+            f"WARNING task type '{d.features.task_type}' is a heuristic GUESS "
+            f"(confidence {d.features.task_confidence:.2f}); the LLM classifier "
+            f"did not run. Routing was made conservative to compensate."
+        )
 
     L.append("")
     L.append("REQUIREMENTS DERIVED FROM THE GRAPH")
@@ -50,6 +56,13 @@ def render(d: RoutingDecision, *, show_trace: bool = True, show_answer: bool = F
             status = "SELECTED (primary)"
         elif d.selection.probe is not None and c.model.id == d.selection.probe.model.id:
             status = "PROBE (cascade)"
+        elif c.eligible and c.expected_quality < float(d.policy["quality_floor"]):
+            # Clears every capability bar but not the policy's quality floor.
+            # Calling this "not cheapest" implies a cost decision when it was a
+            # quality decision — and hides the fact that a cheaper policy would
+            # have selected it.
+            status = (f"below policy floor {d.policy['quality_floor']:.2f} "
+                      f"(q={c.expected_quality:.2f})")
         elif c.eligible:
             status = "eligible, not cheapest"
         else:

@@ -116,6 +116,7 @@ def refine(
 
     text = next((b.text for b in msg.content if b.type == "text"), "{}")
     cost = actual_cost(spec, modifiers, msg.usage).total_usd
+    executor.record_spend("classifier", spec.id, msg.usage, cost, features.text[:80])
     try:
         data = json.loads(text)
     except json.JSONDecodeError:

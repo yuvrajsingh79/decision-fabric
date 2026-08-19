@@ -350,3 +350,51 @@ def test_dotenv_rejects_placeholder_keys(tmp_path, monkeypatch):
     f.write_text("ANTHROPIC_API_KEY=sk-ant-api03-" + "a" * 80 + "\n")
     assert load_dotenv(f) == ["ANTHROPIC_API_KEY"]
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+
+def test_batch_discount_is_never_claimed_for_a_synchronous_call(router):
+    """Eligibility is not execution. Claiming the 50% batch discount for a
+    synchronous call under-reports real spend by half."""
+    from decision_fabric.config_planner import plan_request
+    from decision_fabric.executor import ExecutionResult
+    from decision_fabric.pricing import actual_cost
+    spec = router.kg.model("claude-haiku-4-5")
+    plan = plan_request(
+        spec, required={"instruction_following": 0.5},
+        output_class_meta=router.fabric.output_classes["short"],
+        policy=router.fabric.policy("economy"),
+        slo={"name": "batch", **router.fabric.latency_slos["batch"]},
+    )
+    assert plan.batch, "this SLO should be batch-eligible"
+    live_like = ExecutionResult(
+        model_id=spec.id, text="x", usage={"input_tokens": 1000, "output_tokens": 1000},
+        latency_s=0.1, stop_reason="end_turn", simulated=False, billed_as_batch=False,
+    )
+    full = actual_cost(spec, router.fabric.modifiers, live_like.usage,
+                       batch=live_like.billed_as_batch).total_usd
+    discounted = actual_cost(spec, router.fabric.modifiers, live_like.usage,
+                             batch=True).total_usd
+    assert full == pytest.approx(discounted * 2), "synchronous call must bill full price"
+
+
+def test_baseline_uses_actual_output_length_not_the_projection(router):
+    """Costing the baseline at projected length while billing the router at
+    actual length inflates the reported saving whenever the projection runs
+    long. Both sides must measure the same answer."""
+    d = router.route("summarise this thread", execute=True, learn=False)
+    actual_out = d.attempts[-1].result.usage.get("output_tokens", 0)
+    assert actual_out > 0
+    projected = router.fabric.output_classes[d.output_class]["expected_output_tokens"]
+    # Force a large gap between projection and reality, then confirm the
+    # baseline tracks reality.
+    if abs(actual_out - projected) / projected > 0.25:
+        spec = router.kg.model(router.fabric.baseline()["model"])
+        mults = router.fabric.modifiers["effort_output_multiplier"]
+        ratio = mults[router.fabric.baseline()["effort"]] / mults[d.attempts[-1].plan.cost_effort_key()]
+        implied = actual_out * ratio
+        rate = spec.pricing["output_per_mtok"]
+        assert d.baseline_usd == pytest.approx(
+            implied / 1e6 * rate
+            + d.attempts[-1].result.usage.get("input_tokens", 0) / 1e6 * spec.pricing["input_per_mtok"],
+            rel=0.05,
+        )

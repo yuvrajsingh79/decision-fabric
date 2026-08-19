@@ -59,10 +59,16 @@ def main() -> int:
                 slo={"name": "background", **fab.latency_slos["background"]},
                 effort_multipliers=fab.modifiers["effort_output_multiplier"],
             )
-            # Keep the probe tiny: we are testing config acceptance, not output.
-            plan.max_tokens = max(64, min(plan.max_tokens, 1024))
+            # Keep the probe tiny: we are testing config ACCEPTANCE, not output.
+            # High effort bills thinking as output, so an unclamped ceiling makes
+            # a "cheap" conformance check cost real money.
+            plan.max_tokens = 256
             if plan.thinking and "budget_tokens" in plan.thinking:
-                plan.max_tokens = plan.thinking["budget_tokens"] + 256
+                # This model needs budget_tokens < max_tokens, and its documented
+                # minimum budget is 1024 — so the ceiling must clear that.
+                floor = int(spec.config_surface.get("thinking_min_budget", 1024))
+                plan.thinking = {"type": "enabled", "budget_tokens": floor}
+                plan.max_tokens = floor + 256
             plan.stream = False
 
             kw = plan.to_request_kwargs(msgs)
@@ -79,6 +85,7 @@ def main() -> int:
             else:
                 status = "accepted"
                 cost = actual_cost(spec, fab.modifiers, res.usage).total_usd
+                ex.record_spend("conformance", spec.id, res.usage, cost, label)
                 total += cost
             print(f"{spec.id:<20}{label:<11}{shown[:50]:<52}{status:<10}{cost:>9.5f}")
 

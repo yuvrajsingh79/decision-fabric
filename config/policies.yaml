@@ -105,3 +105,12 @@ classification:
   min_commit_precision: 0.90   # required measured precision to skip the LLM
   min_band_support: 5          # min observations before a band may be trusted
   calibration_file: calibration.yaml
+
+  # When the gate says "do not trust the heuristic" but no LLM classification
+  # actually happened -- no credentials, classifier errored, refinement disabled
+  # -- the task type is a guess the system has ALREADY declared unreliable.
+  # Routing cheaply on it is exactly how a cost optimiser silently degrades
+  # answers while reporting a saving. Treat it as uncertainty, not as fact.
+  unverified_classification:
+    disable_cascade: true       # do not compound a guess with a cheap probe
+    quality_floor_premium: 0.08 # demand more headroom to absorb a wrong task type

@@ -97,6 +97,9 @@ class QueryFeatures:
     scope_signals: list[str] = field(default_factory=list)
     output_class_shift: int = 0      # rungs to move along the output-class ladder
     source: str = "heuristic"        # heuristic | llm | caller
+    # True when the task type is trustworthy: it came from the caller, from the
+    # LLM classifier, or from a heuristic band with measured precision.
+    verified: bool = False
     alternates: list[tuple[str, float]] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 

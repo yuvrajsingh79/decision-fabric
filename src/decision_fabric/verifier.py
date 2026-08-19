@@ -176,6 +176,7 @@ def _llm(
                        "heuristic(judge-unparseable)", reasons=heuristic_verdict.reasons)
 
     cost = actual_cost(judge_spec, modifiers, msg.usage).total_usd
+    executor.record_spend("verifier", judge_spec.id, msg.usage, cost, task_type)
     score = float(data.get("score", 0.0))
     reasons = [f"judge score {score:.2f}"]
     if data.get("failure_reason"):
