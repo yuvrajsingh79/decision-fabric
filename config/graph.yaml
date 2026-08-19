@@ -152,6 +152,13 @@ latency_slos:
 # 32K ceiling for a one-liner. The shift moves along output_class_ladder.
 output_class_ladder: [tiny, short, medium, long, xlong]
 
+# Ceiling for signal-driven shifts. A regex match on "end-to-end" should not be
+# able to triple the token budget: `long` -> `xlong` is 7k -> 24k expected
+# output, and on one corpus query that single hop consumed 44% of total spend.
+# Reaching `xlong` requires the LLM classifier or the caller to ask for it
+# explicitly, where the judgement is actually being made.
+max_signal_output_class: long
+
 output_scope_signals:
   multi_artifact:
     desc: "A deliverable made of several files/modules, not one snippet"

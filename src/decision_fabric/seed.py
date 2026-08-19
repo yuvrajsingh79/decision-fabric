@@ -86,6 +86,10 @@ class Fabric:
         )
 
     @property
+    def max_signal_output_class(self) -> str:
+        return self.ontology.get("max_signal_output_class", "long")
+
+    @property
     def learning_cfg(self) -> dict[str, Any]:
         return self.policies_cfg["learning"]
 
