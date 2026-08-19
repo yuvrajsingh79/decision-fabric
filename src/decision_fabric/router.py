@@ -228,7 +228,13 @@ class Router:
             ladder = self.fabric.output_class_ladder
             if out_class in ladder:
                 i = ladder.index(out_class)
-                shifted = ladder[max(0, min(len(ladder) - 1, i + f.output_class_shift))]
+                j = max(0, min(len(ladder) - 1, i + f.output_class_shift))
+                # A signal may not push past the configured ceiling, though a
+                # task type already above it keeps its own default.
+                cap = self.fabric.max_signal_output_class
+                if cap in ladder and f.output_class_shift > 0:
+                    j = min(j, max(i, ladder.index(cap)))
+                shifted = ladder[j]
                 if shifted != out_class:
                     trace.append(
                         f"ground: scope {f.scope_signals} shifts output class "
