@@ -331,3 +331,44 @@ eval/            train/dev/test discipline, sealed set, calibration
 docs/FINDINGS.md engineering notes and measurements
 COMMANDS.md      every command, marked free or billable
 ```
+
+## Contributing
+
+Contributions are welcome. Setup is the [Quick start](#quick-start) above —
+fork, clone, `pip install -e .`, and `pytest -q` should pass in about three
+seconds. Everything in [COMMANDS.md](COMMANDS.md) marked free costs nothing
+to run.
+
+There are two project-specific rules, and they cause most of the friction:
+
+**Nothing may spend money without `--live`.** Every entry point defaults to
+simulation. `pytest` cannot bill at all — a tripwire in `tests/conftest.py`
+blocks live client construction. A new code path that can reach the API must
+sit behind `--live` and write to the spend ledger.
+
+**Do not tune against `eval/test.jsonl`.** It is content-sealed by
+`eval/test.sha256`, and `tests/test_gate.py` fails if it drifts. Iterate
+against `eval/dev.jsonl`. If you read a `--test` result and then change code
+because of it, that result is retired — say so in the pull request. The
+reasoning is in [eval/README.md](eval/README.md).
+
+Then branch, commit with an imperative one-line summary, and open a pull
+request against `main`. Say what changed and why; if you touched routing,
+classification, or the verifier, include before/after numbers and the eval
+set they came from. This project prefers a measured claim over a plausible
+one, so "it seemed better" is not reviewable.
+
+`main` is protected — every change lands through a pull request and needs an
+approving review before merge. Expect questions; they are about the change,
+not about you.
+
+Good places to start:
+
+- **Task-type coverage.** The regex fast-path has 11 of 16 task types at zero
+  recall. Patterns are cheap to add and easy to measure.
+- **Verifier heuristics.** The weakest link, and never scored against human
+  judgement.
+- **More eval queries.** Realistic enterprise phrasing is the scarce input
+  here; new dev-set queries are genuinely useful.
+
+Bug reports and questions are contributions too — open an issue.
