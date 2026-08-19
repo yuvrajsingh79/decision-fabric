@@ -1,0 +1,5 @@
+# Every file in this repository is owned by the maintainer.
+# Combined with the branch ruleset on main, this means any pull request
+# opened by anyone else requires review from @yuvrajsingh79 before it can
+# be merged.
+* @yuvrajsingh79
