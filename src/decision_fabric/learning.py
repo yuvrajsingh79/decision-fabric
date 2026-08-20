@@ -35,6 +35,10 @@ class LearningStore:
         self.kg = kg
         self.tel = telemetry
         self.prior_strength = int(cfg.get("prior_strength", 8))
+        sim = cfg.get("similarity") or {}
+        self.borrow_discount = float(sim.get("borrow_discount", 0.70))
+        self.req_cfg = cfg.get("requirements") or {}
+        self.max_borrowed_weight = float(sim.get("max_borrowed_weight", 4.0))
         self.max_drift = float(cfg.get("max_level_drift", 0.15))
         self.escalation_is_failure = bool(cfg.get("escalation_counts_as_failure", True))
 
@@ -52,11 +56,44 @@ class LearningStore:
         which is worse than not learning at all.
         """
         succ, n = self.tel.counts(model_id, task_type)
-        if n == 0:
+        b_succ, b_n, sources = self.borrowed_evidence(model_id, task_type)
+        total_succ, total_n = succ + b_succ, n + b_n
+        if total_n <= 0:
             return None
         k = self.prior_strength
-        mean = (prior_mean * k + succ) / (k + n)
+        mean = (prior_mean * k + total_succ) / (k + total_n)
+        # `n` reported back is the DIRECT count. Borrowed evidence shifts the
+        # estimate but must not inflate the confidence weight the reasoner
+        # derives from it — otherwise a task with no direct observations would
+        # present as well-evidenced.
         return (round(max(0.0, min(1.0, mean)), 4), n)
+
+    def borrowed_evidence(self, model_id: str, task_type: str) -> tuple[float, float, list[str]]:
+        """Evidence from tasks that demand overlapping capabilities.
+
+        A model with no runs on `debugging` but ten on `code_review` is not a
+        blank slate. Borrowed observations are discounted by similarity and by
+        a flat penalty, and capped, so a neighbour can inform an estimate but
+        never dominate direct experience.
+        """
+        node = f"task:{task_type}"
+        if not self.kg.has(node):
+            return 0.0, 0.0, []
+        b_succ = b_n = 0.0
+        sources: list[str] = []
+        for dst, data in self.kg.out_edges(node, EdgeType.SIMILAR_TO):
+            neighbour = dst.removeprefix("task:")
+            s_, n_ = self.tel.counts(model_id, neighbour)
+            if n_ == 0:
+                continue
+            w = float(data["similarity"]) * self.borrow_discount
+            b_succ += s_ * w
+            b_n += n_ * w
+            sources.append(f"{neighbour}({n_} obs x{w:.2f})")
+        if b_n > self.max_borrowed_weight:
+            scale = self.max_borrowed_weight / b_n
+            b_succ, b_n = b_succ * scale, b_n * scale
+        return round(b_succ, 4), round(b_n, 4), sources
 
     def posteriors(self) -> list[tuple[str, str, Posterior]]:
         """Raw observed rates per pair — for inspection, not for scoring."""
@@ -83,6 +120,81 @@ class LearningStore:
         that depends on a capability is pooled instead.
         """
         return self.recompute_levels()
+
+    def recompute_requirements(self) -> list[str]:
+        """Adjust task REQUIRES levels from observed outcomes.
+
+        Raising is well-evidenced: the selected model only just cleared this bar
+        and the answer failed, which is a specific attributable event. Lowering
+        is not — a model succeeding with headroom never demonstrates that less
+        would have sufficed — so it moves an order of magnitude slower. Being
+        wrong upward costs money; being wrong downward costs quality.
+        """
+        c = self.req_cfg
+        if not c.get("enabled", True):
+            return []
+        thin = float(c.get("thin_margin", 0.08))
+        generous = float(c.get("generous_margin", 0.25))
+        raise_rate = float(c.get("raise_rate", 0.40))
+        lower_rate = float(c.get("lower_rate", 0.05))
+        min_obs = int(c.get("min_observations", 4))
+        max_drift = float(c.get("max_drift", 0.12))
+
+        changes: list[str] = []
+        for ev in self.tel.requirement_evidence():
+            task, cap, n = ev["task_type"], ev["capability"], int(ev["n"])
+            if n < min_obs:
+                continue
+            edge = self.kg.edge(f"task:{task}", f"cap:{cap}", EdgeType.REQUIRES)
+            if edge is None:
+                continue
+            authored = float(edge["authored_min_level"])
+            current = float(edge["min_level"])
+
+            rows = self.tel.requirement_rows(task, cap)
+            thin_fails = [r for r in rows if not r["success"] and 0 <= r["margin"] < thin]
+            generous_wins = [r for r in rows if r["success"] and r["margin"] > generous]
+
+            delta = 0.0
+            why = ""
+            if thin_fails:
+                # The bar admitted models that could not do the job. Raise it
+                # past the largest margin that still failed.
+                worst = max(r["margin"] for r in thin_fails)
+                delta = raise_rate * (worst + thin - 0.0)
+                why = f"{len(thin_fails)}/{n} failed with margin < {thin:.2f}"
+            elif len(generous_wins) >= min_obs and len(generous_wins) == len(
+                [r for r in rows if r["success"]]
+            ):
+                delta = -lower_rate * generous
+                why = f"{len(generous_wins)}/{n} succeeded with margin > {generous:.2f}"
+
+            if delta == 0.0:
+                continue
+            new = max(authored - max_drift, min(authored + max_drift, current + delta))
+            new = round(max(0.05, min(0.99, new)), 4)
+            if abs(new - current) < 0.001:
+                continue
+            self.kg.set_edge_attr(f"task:{task}", f"cap:{cap}", EdgeType.REQUIRES,
+                                  min_level=new, observations=n)
+            changes.append(
+                f"task:{task} REQUIRES {cap}: {current:.3f} -> {new:.3f} "
+                f"(authored {authored:.3f}, {why})"
+            )
+        return changes
+
+    def sync_evidence(self) -> int:
+        """Project the observation log into the graph as Evidence nodes.
+
+        SQLite remains the source of truth — it is an append-only event log and
+        a graph is the wrong shape for that. What the graph gains is the
+        aggregate, so evidence becomes reachable by traversal rather than
+        living in a store the ontology cannot see.
+        """
+        pairs = self.tel.all_pairs()
+        for model_id, task, succ, n in pairs:
+            self.kg.upsert_evidence(model_id, task, succ, n)
+        return len(pairs)
 
     def recompute_levels(self) -> list[str]:
         # capability -> [(task_type, required_level)] across the whole ontology

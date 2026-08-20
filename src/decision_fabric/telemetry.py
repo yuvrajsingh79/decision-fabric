@@ -53,6 +53,22 @@ CREATE TABLE IF NOT EXISTS observations (
     route_id   INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_obs_pair ON observations(model_id, task_type);
+
+-- Evidence about TASK DEFINITIONS rather than about models: for the capability
+-- that was the binding constraint on the selected model, how much headroom did
+-- it have, and did the answer pass?
+CREATE TABLE IF NOT EXISTS requirement_feedback (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts         REAL NOT NULL,
+    task_type  TEXT NOT NULL,
+    capability TEXT NOT NULL,
+    model_id   TEXT NOT NULL,
+    margin     REAL NOT NULL,
+    required   REAL NOT NULL,
+    success    INTEGER NOT NULL,
+    route_id   INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_reqfb ON requirement_feedback(task_type, capability);
 """
 
 
@@ -124,6 +140,34 @@ class Telemetry:
         self.conn.commit()
 
     # ---------- reads ----------
+
+    def record_requirement_feedback(self, task_type: str, capability: str, model_id: str,
+                                    margin: float, required: float, success: bool,
+                                    route_id: int | None = None) -> None:
+        self.conn.execute(
+            "INSERT INTO requirement_feedback (ts, task_type, capability, model_id,"
+            " margin, required, success, route_id) VALUES (?,?,?,?,?,?,?,?)",
+            (time.time(), task_type, capability, model_id, float(margin),
+             float(required), int(success), route_id),
+        )
+        self.conn.commit()
+
+    def requirement_evidence(self) -> list[dict[str, Any]]:
+        """Per (task, capability): how often a thin margin failed, and how often
+        a generous margin succeeded."""
+        rows = self.conn.execute(
+            "SELECT task_type, capability, COUNT(*) n, SUM(success) s,"
+            " AVG(margin) avg_margin, MIN(margin) min_margin"
+            " FROM requirement_feedback GROUP BY task_type, capability"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def requirement_rows(self, task_type: str, capability: str) -> list[dict[str, Any]]:
+        rows = self.conn.execute(
+            "SELECT margin, success FROM requirement_feedback"
+            " WHERE task_type=? AND capability=?", (task_type, capability)
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     def counts(self, model_id: str, task_type: str) -> tuple[int, int]:
         row = self.conn.execute(

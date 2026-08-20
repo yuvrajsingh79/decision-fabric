@@ -79,6 +79,38 @@ learning:
   # verifier scores rather than trusting this default.
   quality_sigma: 0.10
 
+  # Evidence borrowing across related task types.
+  #
+  # A model with no observations on `debugging` but ten on `code_review` is not
+  # a blank slate: the two tasks demand overlapping capabilities. SIMILAR_TO
+  # edges are derived at boot from that overlap, and a task with thin evidence
+  # borrows from its neighbours, discounted by similarity.
+  similarity:
+    min_similarity: 0.35      # below this, tasks are treated as unrelated
+    borrow_discount: 0.70     # borrowed observations count for less than direct ones
+    max_borrowed_weight: 4.0  # ceiling on borrowed evidence, in observation-equivalents
+
+  # Task definitions learn too, not only models.
+  #
+  # Every REQUIRES min_level is a hand-authored guess. The router has direct
+  # evidence about them: when the model it selected only just cleared a bar and
+  # then failed verification, that bar was too low.
+  #
+  # The two directions are NOT symmetric, on purpose. Raising is well-evidenced
+  # -- a thin margin plus a failure is a specific, attributable event. Lowering
+  # is not: a model succeeding with headroom does not demonstrate that less
+  # would have sufficed. So raising is fast and lowering is slow, and the
+  # failure mode of being wrong is over-provisioning, which costs money rather
+  # than quality.
+  requirements:
+    enabled: true
+    thin_margin: 0.08        # margin below which a model "only just" cleared the bar
+    generous_margin: 0.25    # margin above which success is evidence of slack
+    raise_rate: 0.40         # fraction of the observed shortfall applied per update
+    lower_rate: 0.05         # deliberately an order of magnitude slower
+    min_observations: 4      # per (task, capability) before any adjustment
+    max_drift: 0.12          # bound either side of the authored level
+
 # Cheap models used by the fabric itself. These are infrastructure calls, not
 # routed user work — keep them at the bottom of the ladder or the router costs
 # more than it saves.

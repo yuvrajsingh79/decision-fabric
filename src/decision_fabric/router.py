@@ -334,8 +334,12 @@ class Router:
         # slow model under a realtime SLO, which is a correctness bug, not a
         # cost one.
         slo = {"name": d.slo_name, **self.fabric.latency_slos[d.slo_name]}
+        # Escalation follows this task's path through the lattice, not the
+        # default chain: a tier that sits below the bar on the capability that
+        # matters adds nothing but a wasted call.
+        path = self.kg.ladder(d.features.task_type)
         for c in sorted(sel.all_candidates, key=lambda c: c.model.rung):
-            if c.eligible and c.model.rung > sel.primary.model.rung:
+            if c.eligible and c.model.rung > sel.primary.model.rung and c.model.id in path:
                 queue.append((
                     c,
                     plan_request(
@@ -351,8 +355,9 @@ class Router:
                 ))
         if len(queue) == (2 if sel.cascade else 1):
             d.trace.append(
-                f"no eligible rung above {sel.primary.model.id} — it is the ceiling for this "
-                f"request's constraints"
+                f"no eligible rung above {sel.primary.model.id} on the "
+                f"'{d.features.task_type}' escalation path "
+                f"({' -> '.join(m.replace('claude-', '') for m in path)})"
             )
 
         escalations = 0
@@ -477,6 +482,25 @@ class Router:
         ))
 
     def _learn(self, d: RoutingDecision) -> None:
+        # Feedback about the TASK DEFINITION, not the model: for the capability
+        # that was the binding constraint on each attempt, how much headroom did
+        # that model have and did the answer pass?
+        by_id = {c.model.id: c for c in d.selection.all_candidates}
+        for a in d.attempts:
+            cand = by_id.get(a.model_id)
+            if cand is None or not cand.binding_capability:
+                continue
+            cap = cand.binding_capability
+            req = d.requirements.get(cap)
+            if req is None:
+                continue
+            self.telemetry.record_requirement_feedback(
+                d.features.task_type, cap, a.model_id,
+                margin=cand.margins.get(cap, 0.0), required=req.level,
+                success=bool(getattr(a.verdict, "accepted", False)),
+                route_id=d.route_id,
+            )
+
         n = len(d.attempts)
         for i, a in enumerate(d.attempts):
             accepted = bool(getattr(a.verdict, "accepted", False))
@@ -487,7 +511,10 @@ class Router:
                 a.model_id, d.features.task_type, success,
                 source="verifier" if accepted else "escalation", route_id=d.route_id,
             )
-        d.drift = self.learning.apply_drift(d.features.task_type)
+        self.learning.sync_evidence()
+        d.drift = self.learning.recompute_requirements() + self.learning.apply_drift(
+            d.features.task_type
+        )
         for c in d.drift:
             d.trace.append(f"learn: {c}")
 

@@ -162,6 +162,18 @@ modifiers:
 # The escalation ladder: cheap-first cascade with verify-then-escalate.
 ladder: [claude-haiku-4-5, claude-sonnet-5, claude-opus-5, claude-fable-5]
 
+# Per-task escalation paths. A single chain forces every task through every
+# rung, which is wrong where a tier adds no headroom on the dimension that
+# matters: on `math_proof`, Sonnet sits below the bar on math_symbolic, so
+# escalating into it burns a call to learn what the graph already knows.
+# Named paths must be subsequences of the models catalog, not arbitrary sets.
+escalation_paths:
+  math_proof:         [claude-haiku-4-5, claude-opus-5, claude-fable-5]
+  agentic_multistep:  [claude-sonnet-5, claude-opus-5, claude-fable-5]
+  architecture_design: [claude-sonnet-5, claude-opus-5, claude-fable-5]
+  chitchat:           [claude-haiku-4-5]
+  classification:     [claude-haiku-4-5, claude-sonnet-5]
+
 # What "not routing at all" costs — the baseline every saving is measured against.
 baseline:
   model: claude-opus-5

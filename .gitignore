@@ -14,3 +14,14 @@ venv/
 
 # build artifacts
 *.egg-info/
+
+# Code walkthrough and architecture pages are kept local, along with the
+# script that renders them. docs/FINDINGS.md stays in the repository.
+docs/CODE_WALKTHROUGH.md
+docs/architecture.src.html
+docs/*.html
+tools/
+build/
+
+# runtime extension overlay — generated, environment-specific
+config/extensions.yaml
