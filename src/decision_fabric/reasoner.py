@@ -98,8 +98,8 @@ def _quality(
     task_type: str,
     learning: Any,
     prior_strength: int,
-) -> tuple[float, float, float | None, float, dict[str, float], str]:
-    """Returns (expected, seed, learned_mean, evidence_weight, margins, binding_cap).
+) -> tuple[float, float, float | None, float, dict[str, float], str, dict[str, str]]:
+    """Returns (expected, seed, learned_mean, evidence_weight, margins, binding_cap, inferred).
 
     Both `seed` and `margins` read the immutable seed_level, deliberately.
 
@@ -116,9 +116,13 @@ def _quality(
     rather than raising it.
     """
     margins: dict[str, float] = {}
+    inferred: dict[str, str] = {}
     num = den = 0.0
     for cap, req in reqs.items():
-        provided = kg.seed_level(spec.id, cap)
+        resolved = kg.resolve_level(spec.id, cap, seed=True)
+        provided = resolved.level
+        if not resolved.declared:
+            inferred[cap] = resolved.explain()
         margins[cap] = round(provided - req.level, 4)
         # Weight by how demanding the requirement is: clearing a 0.95 bar says
         # more about a model than clearing a 0.40 one.
@@ -137,7 +141,8 @@ def _quality(
             learned_mean, n = post
             weight = n / (n + prior_strength)
             expected = learned_mean
-    return round(expected, 4), round(seed, 4), learned_mean, round(weight, 3), margins, binding
+    return (round(expected, 4), round(seed, 4), learned_mean, round(weight, 3),
+            margins, binding, inferred)
 
 
 def build_candidates(
@@ -187,9 +192,11 @@ def build_candidates(
                 f"{slo['max_relative_latency']:.2f}"
             )
 
-        expected, seed, lmean, lweight, margins, binding = _quality(
+        expected, seed, lmean, lweight, margins, binding, inferred = _quality(
             kg, spec, reqs, features.task_type, learning, prior_strength
         )
+        for cap, how in inferred.items():
+            reasons.append(f"{cap}: {how}")
 
         # --- capability bar (soft: may be accepted under protest) ---
         eligible = hard_ok
@@ -199,7 +206,8 @@ def build_candidates(
             worst = min(short, key=lambda c: short[c])
             reasons.append(
                 f"below bar on {worst} by {abs(short[worst]):.2f} "
-                f"(needs {reqs[worst].level:.2f}, provides {kg.seed_level(spec.id, worst):.2f})"
+                f"(needs {reqs[worst].level:.2f}, "
+                f"{kg.resolve_level(spec.id, worst, seed=True).explain()})"
             )
 
         plan = plan_request(
