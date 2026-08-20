@@ -29,6 +29,8 @@ class EdgeType(str, Enum):
     PRODUCES = "PRODUCES"        # TaskType -> OutputClass
     ESCALATES_TO = "ESCALATES_TO"  # Model -> Model
     GOVERNS = "GOVERNS"          # Policy -> TaskType|Domain
+    SUBSUMES = "SUBSUMES"        # Capability -> Capability {parent subsumes child}
+    SIMILAR_TO = "SIMILAR_TO"    # TaskType -> TaskType {jaccard over required caps}
     OBSERVED = "OBSERVED"        # Evidence -> Model {task_type, success}
 
 
@@ -55,6 +57,34 @@ class Requirement:
         self.level = min(self.level, 0.99)
         if source not in self.sources:
             self.sources.append(source)
+
+
+@dataclass
+class ResolvedLevel:
+    """A capability level plus how it was arrived at.
+
+    A level a model DECLARED and a level INFERRED from an ancestor are not the
+    same claim, and a router that cannot tell them apart cannot explain itself.
+    `hops` is 0 for a declared level, and the number of SUBSUMES edges walked
+    otherwise.
+    """
+    level: float
+    source: str                  # "declared" | "inherited" | "unknown"
+    via: str | None = None       # the ancestor the level came from
+    hops: int = 0
+    discount: float = 1.0
+
+    @property
+    def declared(self) -> bool:
+        return self.source == "declared"
+
+    def explain(self) -> str:
+        if self.source == "declared":
+            return f"declared {self.level:.2f}"
+        if self.source == "inherited":
+            return (f"inferred {self.level:.2f} from {self.via} "
+                    f"({self.hops} hop{'s' if self.hops > 1 else ''} x{self.discount:.2f})")
+        return "no declared level and no ancestor to inherit from"
 
 
 @dataclass

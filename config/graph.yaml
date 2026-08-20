@@ -1,6 +1,29 @@
 # The ontology seed: everything except models (see models.yaml).
 # Loaded into a directed multigraph by seed.py.
 
+# Capabilities form a taxonomy, not a flat set. A capability with a parent is a
+# SPECIALISATION of it: a model that declares the parent but not the child is
+# presumed competent at the child, discounted per hop. This is what stops a
+# newly added capability from zeroing every model in the catalog.
+#
+# `inheritance_discount` is applied once per hop up the tree. 0.90 encodes
+# "a strong general reasoner is probably decent at the specific thing, but do
+# not assume parity" -- deliberately conservative, since an over-generous
+# discount lets a model clear a bar it has never demonstrated.
+capability_taxonomy:
+  inheritance_discount: 0.90
+  max_hops: 3
+  parents:
+    math_symbolic:        deep_reasoning
+    code_review:          deep_reasoning
+    code_synthesis:       instruction_following
+    agentic_tool_use:     instruction_following
+    structured_extraction: instruction_following
+    summarization:        long_context
+    creative_writing:     instruction_following
+    multilingual:         instruction_following
+    domain_precision:     deep_reasoning
+
 capabilities:
   instruction_following: {desc: "Follows format/constraints without drift"}
   structured_extraction: {desc: "Pulls typed fields out of unstructured text"}
